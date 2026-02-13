@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#06061a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>LotoVision Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{overscroll-behavior:none}
+body{font-family:'DM Sans',sans-serif;background:#06061a;color:#e2e8f0;min-height:100vh;min-height:100dvh;padding-bottom:env(safe-area-inset-bottom)}
+button{cursor:pointer;border:none;outline:none;font-family:inherit;-webkit-appearance:none}
+input,select{font-family:'JetBrains Mono',monospace;-webkit-appearance:none}
+.sc::-webkit-scrollbar{width:3px}.sc::-webkit-scrollbar-thumb{background:rgba(100,100,200,0.2);border-radius:2px}
+@keyframes popIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes fadeUp{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+.shm{background:linear-gradient(90deg,#f5c518,#fff,#f5c518);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite}
+.card{background:rgba(16,16,42,0.95);border:1px solid rgba(80,80,170,0.1);border-radius:14px;padding:16px}
+.b{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.b-s{width:28px;height:28px;font-size:9px}.b-m{width:42px;height:42px;font-size:13px}.b-l{width:56px;height:56px;font-size:19px}
+.b-n{background:linear-gradient(145deg,#252548,#1a1a34);border:2px solid rgba(100,120,255,0.22);color:#e2e8f0}
+.b-st{background:linear-gradient(145deg,#d4a017,#f5c518);border:2px solid rgba(255,220,80,0.45);color:#1a1a2e}
+.b-bo{background:linear-gradient(145deg,#e63946,#ff6b6b);border:2px solid rgba(255,100,100,0.35);color:#fff}
+.bg{animation:popIn .3s ease both}
+.tab{padding:7px 12px;border-radius:8px;font-size:11px;font-weight:600;background:transparent;color:#4b5563;border:1px solid transparent;transition:.15s}
+.tab.on{background:rgba(245,197,24,0.1);color:#f5c518;border-color:rgba(245,197,24,0.2)}
+.gbtn{padding:14px 36px;border-radius:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#c99a10,#f5c518,#c99a10);color:#1a1a2e;box-shadow:0 4px 20px rgba(245,197,24,0.2);transition:.2s;letter-spacing:.3px;width:100%;max-width:360px}
+.gbtn:disabled{opacity:.5}.gbtn:active:not(:disabled){transform:scale(.97)}
+.inp{background:rgba(20,20,50,0.8);border:1px solid rgba(80,80,170,0.15);border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:14px;width:100%;transition:border .2s}
+.inp:focus{border-color:rgba(245,197,24,0.3);outline:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 24px;background:rgba(16,185,129,0.95);color:#fff;border-radius:12px;font-size:13px;font-weight:600;z-index:999;animation:fadeUp .3s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.phase{background:rgba(15,15,35,0.6);border-radius:8px;padding:10px;font-size:10px;color:#64748b;line-height:1.6}
+.row{animation:fadeUp .3s ease both}
+#app{max-width:600px;margin:0 auto;padding:0 12px 30px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ===== DEFAULT DATA (50 draws each) =====
+var DEF_EM=[
+{d:"2026-02-06",n:[10,13,20,23,24],s:[6,11]},{d:"2026-02-03",n:[26,27,28,34,37],s:[4,9]},
+{d:"2026-01-30",n:[14,18,31,35,46],s:[7,11]},{d:"2026-01-27",n:[4,23,42,43,47],s:[3,9]},
+{d:"2026-01-23",n:[4,5,13,21,42],s:[3,10]},{d:"2026-01-20",n:[11,18,19,22,50],s:[1,11]},
+{d:"2026-01-16",n:[5,17,24,29,50],s:[5,10]},{d:"2026-01-13",n:[6,10,18,44,47],s:[2,10]},
+{d:"2026-01-09",n:[1,7,10,26,34],s:[2,4]},{d:"2026-01-06",n:[5,14,17,18,31],s:[10,12]},
+{d:"2026-01-02",n:[8,27,42,44,46],s:[1,10]},{d:"2025-12-30",n:[11,26,29,34,44],s:[1,10]},
+{d:"2025-12-26",n:[12,22,32,36,48],s:[3,4]},{d:"2025-12-23",n:[8,26,27,29,44],s:[11,12]},
+{d:"2025-12-19",n:[17,21,39,43,44],s:[1,11]},{d:"2025-12-16",n:[14,16,40,41,44],s:[2,10]},
+{d:"2025-12-12",n:[7,25,30,37,41],s:[5,11]},{d:"2025-12-09",n:[2,8,13,29,49],s:[2,11]},
+{d:"2025-12-05",n:[9,15,25,34,46],s:[8,12]},{d:"2025-12-02",n:[4,13,14,20,41],s:[6,12]},
+{d:"2025-11-28",n:[5,29,33,39,42],s:[3,9]},{d:"2025-11-25",n:[6,11,17,35,44],s:[3,7]},
+{d:"2025-11-21",n:[17,19,29,35,48],s:[5,9]},{d:"2025-11-18",n:[2,4,15,21,48],s:[6,12]},
+{d:"2025-11-14",n:[9,26,27,45,48],s:[8,9]},{d:"2025-11-11",n:[4,22,32,36,47],s:[2,10]},
+{d:"2025-11-07",n:[11,21,39,40,43],s:[2,8]},{d:"2025-11-04",n:[6,9,25,28,45],s:[1,4]},
+{d:"2025-10-31",n:[5,14,38,43,45],s:[7,11]},{d:"2025-10-28",n:[7,8,24,35,49],s:[2,12]},
+{d:"2025-10-24",n:[7,8,25,31,45],s:[7,12]},{d:"2025-10-21",n:[5,24,29,40,42],s:[6,12]},
+{d:"2025-10-17",n:[13,35,39,44,47],s:[3,5]},{d:"2025-10-14",n:[5,8,14,16,18],s:[3,10]},
+{d:"2025-10-10",n:[6,7,17,20,21],s:[1,10]},{d:"2025-10-07",n:[24,39,42,43,48],s:[5,8]},
+{d:"2025-10-03",n:[6,12,18,25,41],s:[2,6]},{d:"2025-09-30",n:[3,8,15,17,48],s:[2,8]},
+{d:"2025-09-26",n:[4,17,25,28,44],s:[5,11]},{d:"2025-09-23",n:[11,13,24,29,33],s:[2,5]},
+{d:"2025-09-19",n:[8,10,26,32,42],s:[9,12]},{d:"2025-09-16",n:[1,9,13,35,40],s:[5,6]},
+{d:"2025-09-12",n:[5,10,23,31,37],s:[3,11]},{d:"2025-09-09",n:[3,13,24,39,40],s:[2,8]},
+{d:"2025-09-05",n:[27,30,31,41,43],s:[5,8]},{d:"2025-09-02",n:[13,30,31,32,36],s:[1,12]},
+{d:"2025-08-29",n:[6,9,10,13,37],s:[1,7]},{d:"2025-08-26",n:[2,14,38,42,45],s:[10,11]},
+{d:"2025-08-22",n:[6,9,12,30,39],s:[4,10]},{d:"2025-08-19",n:[24,31,34,41,43],s:[6,8]}];
+var DEF_LO=[
+{d:"2026-02-07",n:[2,9,20,41,49],c:9},{d:"2026-02-04",n:[1,11,12,24,37],c:9},
+{d:"2026-02-02",n:[7,11,12,29,41],c:5},{d:"2026-01-31",n:[1,4,14,21,24],c:4},
+{d:"2026-01-28",n:[7,10,11,30,42],c:4},{d:"2026-01-26",n:[9,25,28,32,36],c:4},
+{d:"2026-01-24",n:[10,18,30,33,39],c:8},{d:"2026-01-21",n:[25,27,29,40,45],c:10},
+{d:"2026-01-19",n:[12,13,16,24,34],c:4},{d:"2026-01-17",n:[12,26,34,42,49],c:6},
+{d:"2026-01-14",n:[4,5,23,28,31],c:5},{d:"2026-01-12",n:[2,13,24,32,39],c:6},
+{d:"2026-01-10",n:[1,7,16,35,36],c:3},{d:"2026-01-07",n:[5,17,30,35,36],c:3},
+{d:"2026-01-05",n:[5,13,23,30,31],c:6},{d:"2026-01-03",n:[9,29,30,31,40],c:2},
+{d:"2025-12-31",n:[6,15,19,39,43],c:1},{d:"2025-12-29",n:[10,21,33,43,47],c:3},
+{d:"2025-12-27",n:[16,17,41,42,49],c:10},{d:"2025-12-24",n:[5,9,33,42,45],c:1},
+{d:"2025-12-22",n:[16,20,40,41,49],c:9},{d:"2025-12-20",n:[16,28,37,42,47],c:2},
+{d:"2025-12-17",n:[2,14,20,30,49],c:2},{d:"2025-12-15",n:[26,32,38,42,43],c:6},
+{d:"2025-12-13",n:[7,10,15,22,25],c:7},{d:"2025-12-10",n:[33,34,35,39,44],c:10},
+{d:"2025-12-08",n:[8,9,11,17,41],c:1},{d:"2025-12-06",n:[2,14,24,33,34],c:1},
+{d:"2025-12-03",n:[10,13,18,28,36],c:8},{d:"2025-12-01",n:[11,13,14,38,46],c:1},
+{d:"2025-11-29",n:[8,13,20,23,27],c:3},{d:"2025-11-26",n:[9,14,16,26,33],c:5},
+{d:"2025-11-24",n:[22,28,29,36,47],c:1},{d:"2025-11-22",n:[7,10,34,40,45],c:6},
+{d:"2025-11-19",n:[24,26,33,45,46],c:2},{d:"2025-11-17",n:[7,17,26,28,45],c:6},
+{d:"2025-11-15",n:[5,11,22,23,24],c:3},{d:"2025-11-12",n:[3,8,29,33,37],c:2},
+{d:"2025-11-10",n:[8,9,16,37,45],c:2},{d:"2025-11-08",n:[16,27,32,36,48],c:8},
+{d:"2025-11-05",n:[19,23,29,31,45],c:4},{d:"2025-11-03",n:[2,3,29,32,49],c:2},
+{d:"2025-11-01",n:[3,17,24,26,33],c:6},{d:"2025-10-29",n:[6,7,34,35,45],c:8},
+{d:"2025-10-27",n:[10,23,45,47,48],c:8},{d:"2025-10-25",n:[4,5,6,16,35],c:1},
+{d:"2025-10-22",n:[4,29,31,39,49],c:1},{d:"2025-10-20",n:[12,24,34,38,43],c:1},
+{d:"2025-10-18",n:[11,17,19,47,49],c:1},{d:"2025-10-15",n:[1,9,17,22,48],c:5}];
+
+// ===== STATE =====
+var S={game:'loto',tab:'optimal',gridCount:6,result:null,sAlgo:'hot',sResult:null,hist:[],loading:false,fStatus:''};
+
+// ===== DATA MANAGEMENT =====
+function getDraws(g){try{var s=localStorage.getItem(g+'_dr');if(s)return JSON.parse(s)}catch(e){}return g==='em'?DEF_EM.slice():DEF_LO.slice()}
+function saveDraws(g,d){try{localStorage.setItem(g+'_dr',JSON.stringify(d))}catch(e){}}
+function getHist(){try{var s=localStorage.getItem('hist');if(s)return JSON.parse(s)}catch(e){}return[]}
+function saveHist(h){try{localStorage.setItem('hist',JSON.stringify(h.slice(0,200)))}catch(e){}}
+
+function mergeDraws(old,fresh){
+  var dates={};old.forEach(function(d){dates[d.d]=true});
+  var added=fresh.filter(function(d){return!dates[d.d]});
+  if(!added.length)return{draws:old,count:0};
+  return{draws:added.concat(old).sort(function(a,b){return b.d.localeCompare(a.d)}),count:added.length};
+}
+
+function addManual(g,date,nums,sec){
+  var draws=getDraws(g);
+  var exists=draws.some(function(d){return d.d===date});
+  if(exists)return false;
+  var dr={d:date,n:nums.sort(function(a,b){return a-b})};
+  if(g==='em')dr.s=sec.sort(function(a,b){return a-b});else dr.c=sec[0];
+  draws.unshift(dr);
+  draws.sort(function(a,b){return b.d.localeCompare(a.d)});
+  saveDraws(g,draws);
+  return true;
+}
+
+// ===== AUTO FETCH =====
+async function doFetch(g){
+  S.fStatus='Recherche...';render();
+  var isEM=g==='em';
+  var url=isEM?'https://www.loterieplus.com/euromillions/resultats-tirage.php':'https://www.loterieplus.com/loto/resultats-tirage.php';
+  var proxies=['https://api.allorigins.win/raw?url=','https://corsproxy.io/?'];
+  for(var p=0;p<proxies.length;p++){
+    try{
+      var ctrl=new AbortController();
+      var t=setTimeout(function(){ctrl.abort()},12000);
+      var r=await fetch(proxies[p]+encodeURIComponent(url),{signal:ctrl.signal});
+      clearTimeout(t);
+      if(!r.ok)continue;
+      var html=await r.text();
+      var parsed=parseHTML(html,g);
+      if(parsed&&parsed.length>=3){
+        var old=getDraws(g);
+        var m=mergeDraws(old,parsed);
+        if(m.count>0){saveDraws(g,m.draws);S.fStatus=m.count+' nouveau(x) tirage(s) !';showToast(m.count+' tirage(s) ajoute(s)');}
+        else S.fStatus='Donnees a jour ('+old.length+' tirages)';
+        localStorage.setItem('lf_'+g,new Date().toISOString());
+        render();return true;
+      }
+    }catch(e){continue}
+  }
+  S.fStatus='Auto-update indisponible — ajout manuel ci-dessous';render();return false;
+}
+
+function parseHTML(html,g){
+  try{
+    var draws=[];var isEM=g==='em';
+    var doc=new DOMParser().parseFromString(html,'text/html');
+    var rows=doc.querySelectorAll('tr');
+    for(var i=0;i<rows.length;i++){
+      var txt=rows[i].textContent;
+      var dm=txt.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+      if(!dm)continue;
+      var d=dm[3]+'-'+dm[2]+'-'+dm[1];
+      // Extract all small numbers from the row
+      var cells=rows[i].querySelectorAll('td');
+      var allN=[];
+      for(var c=0;c<cells.length;c++){
+        var cn=cells[c].textContent.match(/\b(\d{1,2})\b/g);
+        if(cn)cn.forEach(function(x){var v=parseInt(x);if(v>=1&&v<=50)allN.push(v)});
+      }
+      if(isEM&&allN.length>=7){
+        var mn=allN.slice(0,5).sort(function(a,b){return a-b});
+        var sn=allN.slice(5,7).filter(function(n){return n<=12}).sort(function(a,b){return a-b});
+        if(mn.length===5&&sn.length===2&&new Set(mn).size===5)draws.push({d:d,n:mn,s:sn});
+      }else if(!isEM&&allN.length>=6){
+        var mn=allN.slice(0,5).sort(function(a,b){return a-b});
+        var ch=allN[5];
+        if(mn.length===5&&ch>=1&&ch<=10&&new Set(mn).size===5)draws.push({d:d,n:mn,c:ch});
+      }
+    }
+    return draws.length>0?draws:null;
+  }catch(e){return null}
+}
+
+// ===== ANALYSIS =====
+function analyze(draws,g){
+  var isEM=g==='em',mM=isEM?50:49,sM=isEM?12:10,T=draws.length;
+  var F={},sF={},L={},sL={},R={},dec={},pairs={},gaps={};
+  var i;for(i=1;i<=mM;i++){F[i]=0;L[i]=T;R[i]=0}for(i=1;i<=sM;i++){sF[i]=0;sL[i]=T}
+  draws.forEach(function(dr,idx){
+    var w=1+(T-idx)/T;
+    dr.n.forEach(function(n){F[n]++;R[n]+=w;if(L[n]===T)L[n]=idx;dec[Math.floor((n-1)/10)]=(dec[Math.floor((n-1)/10)]||0)+1});
+    var sec=isEM?dr.s:[dr.c];sec.forEach(function(n){sF[n]++;if(sL[n]===T)sL[n]=idx});
+    for(var i=0;i<dr.n.length;i++)for(var j=i+1;j<dr.n.length;j++){var k=Math.min(dr.n[i],dr.n[j])+'-'+Math.max(dr.n[i],dr.n[j]);pairs[k]=(pairs[k]||0)+1}
+  });
+  for(var num=1;num<=mM;num++){var ap=[];draws.forEach(function(dr,idx){if(dr.n.indexOf(num)>=0)ap.push(idx)});
+    if(ap.length>1){var gs=[];for(var j=1;j<ap.length;j++)gs.push(ap[j]-ap[j-1]);gaps[num]={avg:gs.reduce(function(a,b){return a+b},0)/gs.length}}}
+  var sums=draws.map(function(d){return d.n.reduce(function(a,b){return a+b},0)});
+  var avgS=sums.length?sums.reduce(function(a,b){return a+b},0)/sums.length:125;
+  var pop={};for(i=1;i<=mM;i++){var p=0;if(i<=31)p+=3;if(i<=12)p+=2;if(i%7===0)p+=2;if(i<=9)p+=1;if([3,7,13,17,21].indexOf(i)>=0)p+=1;if(i%10===0)p+=1;pop[i]=p}
+  return{F:F,sF:sF,L:L,sL:sL,R:R,pairs:pairs,gaps:gaps,avgS:avgS,T:T,mM:mM,sM:sM,pop:pop,dec:dec,sums:sums}
+}
+
+// ===== UTILS =====
+function mx(o){var v=Object.values(o);return v.length?Math.max.apply(null,v)||1:1}
+function wP(w,c,m){
+  var e=[];for(var k in w){var n=parseInt(k);if(n>=1&&n<=m)e.push([n,Math.max(w[k],0.001)])}
+  var tw=e.reduce(function(a,x){return a+x[1]},0)||1;var pk={};var ct=0;var sz=0;
+  while(sz<c&&ct<3000){var r=Math.random()*tw;for(var i=0;i<e.length;i++){r-=e[i][1];if(r<=0&&!pk[e[i][0]]){pk[e[i][0]]=true;sz++;break}}ct++}
+  while(sz<c){var n=Math.floor(Math.random()*m)+1;if(!pk[n]){pk[n]=true;sz++}}
+  return Object.keys(pk).map(Number).sort(function(a,b){return a-b})
+}
+
+// ===== OPTIMAL STRATEGY (5 phases) =====
+function optimal(g,st,nG){
+  var isEM=g==='em',sC=isEM?2:1,mP=mx(st.pop);
+  // P1: Composite score
+  var CS={};for(var i=1;i<=st.mM;i++){
+    var fs=(st.F[i]||0)/st.T,rs=(st.R[i]||0)/(st.T*1.5),os=(st.L[i]||0)/st.T;
+    var gs=st.gaps[i]?1/st.gaps[i].avg:0.5;
+    var sm=fs*.25+rs*.30+os*.20+gs*.25;
+    var ap=1-(st.pop[i]||0)/(mP+1);CS[i]=sm*(.5+ap*1.5)*1000}
+  // P2: Consensus (7 algos x 150)
+  var V={};for(i=1;i<=st.mM;i++)V[i]=0;
+  var tP=Object.entries(st.pairs).sort(function(a,b){return b[1]-a[1]}).slice(0,15);
+  for(var it=0;it<150;it++){var ai=it%7;var nums;
+    if(ai===0){var w={};for(var j=1;j<=st.mM;j++)w[j]=Math.pow(st.F[j]||.1,2)*(1-(st.pop[j]||0)/mP+.5);nums=wP(w,5,st.mM)}
+    else if(ai===1){var w={};for(var j=1;j<=st.mM;j++)w[j]=Math.pow(st.L[j]||1,2)*(1-(st.pop[j]||0)/mP+.5);nums=wP(w,5,st.mM)}
+    else if(ai===2){nums=wP(CS,5,st.mM)}
+    else if(ai===3){var w={};for(var j=1;j<=st.mM;j++)w[j]=(st.R[j]||.1)*(1-(st.pop[j]||0)/mP+.5);nums=wP(w,5,st.mM)}
+    else if(ai===4){var w={};for(var j=1;j<=st.mM;j++){var gg=st.gaps[j]?1/st.gaps[j].avg:.5;w[j]=gg*(st.F[j]||1)*(1-(st.pop[j]||0)/mP+.3)}nums=wP(w,5,st.mM)}
+    else if(ai===5){var pk={};if(tP.length){var sp=tP[Math.floor(Math.random()*Math.min(6,tP.length))];sp[0].split('-').map(Number).forEach(function(n){pk[n]=true})}
+      var pkS=Object.keys(pk).length;while(pkS<5){var nx=wP(CS,1,st.mM);if(!pk[nx[0]]){pk[nx[0]]=true;pkS++}}nums=Object.keys(pk).map(Number).sort(function(a,b){return a-b}).slice(0,5)}
+    else{var best=null,bD=1e9;for(var a=0;a<200;a++){var c=wP(CS,5,st.mM);var s=c.reduce(function(a,b){return a+b},0);var d=Math.abs(s-st.avgS);if(d<bD){best=c;bD=d}}nums=best||wP(CS,5,st.mM)}
+    nums.forEach(function(n){V[n]+=(CS[n]||1)})}
+  // P3: Monte Carlo (3000)
+  var MC={};for(i=1;i<=st.mM;i++)MC[i]=0;
+  var tF=Object.values(st.F).reduce(function(a,b){return a+b},0)||1;
+  for(var si=0;si<3000;si++){var dr={};var dsz=0;while(dsz<5){var r=Math.random()*tF;for(var n=1;n<=st.mM;n++){r-=(st.F[n]||0);if(r<=0&&!dr[n]){dr[n]=true;dsz++;break}}}Object.keys(dr).forEach(function(n){MC[n]++})}
+  // P4: Final ranking
+  var FS={},mV=mx(V),mMC=mx(MC),mCS=mx(CS);
+  for(i=1;i<=st.mM;i++)FS[i]=(V[i]||0)/mV*.40+(MC[i]||0)/mMC*.25+(CS[i]||0)/mCS*.35;
+  var ranked=Object.entries(FS).sort(function(a,b){return b[1]-a[1]});
+  var pool=ranked.slice(0,16).map(function(e){return parseInt(e[0])});
+  // Secondary
+  var sCS={};for(i=1;i<=st.sM;i++){var sf=(st.sF[i]||0)/st.T,sd=(st.sL[i]||0)/st.T;sCS[i]=(sf*.5+sd*.5)*(i<=3?.6:i<=6?.85:1.2)*100}
+  // P5: Wheeling
+  var grids=[],used={};
+  for(var g2=0;g2<nG;g2++){var bG=null,bS=-1;
+    for(var at=0;at<400;at++){
+      var sh=pool.slice().sort(function(){return Math.random()-.5});
+      var co=sh.slice(0,5).sort(function(a,b){return a-b});var key=co.join('-');if(used[key])continue;
+      var sum=co.reduce(function(a,b){return a+b},0);
+      var sumSc=1-Math.min(Math.abs(sum-st.avgS)/(st.avgS*.3||1),1);
+      var ev=co.filter(function(n){return n%2===0}).length;var balSc=1-Math.abs(ev-2.5)/2.5;
+      var decs={};co.forEach(function(n){decs[Math.floor((n-1)/10)]=1});var spSc=Object.keys(decs).length/5;
+      var cPop=co.reduce(function(a,n){return a+(st.pop[n]||0)},0);var apSc=1-cPop/(5*mP||1);
+      var olP=0;grids.forEach(function(pr){var ol=co.filter(function(n){return pr.mn.indexOf(n)>=0}).length;olP+=ol*.12});
+      var stSc=co.reduce(function(a,n){return a+(FS[n]||0)},0)/5;
+      var sc=sumSc*.20+balSc*.12+spSc*.15+apSc*.20+(1-olP)*.13+stSc*.15;
+      if(sc>bS){bS=sc;bG=co}}
+    if(bG){used[bG.join('-')]=1;grids.push({mn:bG,sn:wP(sCS,sC,st.sM),score:bS})}}
+  grids.sort(function(a,b){return b.score-a.score});
+  var cov={};grids.forEach(function(g){g.mn.forEach(function(n){cov[n]=1})});
+  var aP=0,aS=0;if(grids.length){grids.forEach(function(g){aP+=g.mn.reduce(function(a,n){return a+(st.pop[n]||0)},0);aS+=g.mn.reduce(function(a,n){return a+n},0)});aP/=grids.length;aS/=grids.length}
+  return{grids:grids,pool:pool,ranked:ranked.slice(0,20),FS:FS,st:{cov:Object.keys(cov).length,aP:aP,aS:aS}}
+}
+
+function genBasic(algo,g,st){
+  var isEM=g==='em',sC=isEM?2:1,sw={};for(var i=1;i<=st.sM;i++)sw[i]=st.sF[i]||1;var mn;
+  if(algo==='hot'){var w={};for(i=1;i<=st.mM;i++)w[i]=Math.pow(st.F[i]||.1,2.5);mn=wP(w,5,st.mM)}
+  else if(algo==='cold'){var m=mx(st.F);var w={};for(i=1;i<=st.mM;i++)w[i]=Math.pow(m-(st.F[i]||0)+1,2);mn=wP(w,5,st.mM)}
+  else if(algo==='overdue'){var w={};for(i=1;i<=st.mM;i++)w[i]=Math.pow(st.L[i]||1,2.5);mn=wP(w,5,st.mM)}
+  else{var a=[];for(i=1;i<=st.mM;i++)a.push(i);a.sort(function(){return Math.random()-.5});mn=a.slice(0,5).sort(function(a,b){return a-b})}
+  return{mn:mn,sn:wP(sw,sC,st.sM)}
+}
+
+// ===== UI HELPERS =====
+function B(n,type,size){
+  var cls='b b-'+(size||'s')+' b-'+(type||'n');
+  return '<span class="'+cls+'">'+n+'</span>';
+}
+function bar(lbl,val,max,col,lw){
+  var pct=max>0?Math.max(val/max*100,1):1;
+  return '<div style="display:flex;align-items:center;gap:5px;font-size:10px;margin-bottom:3px">'+
+    '<span style="width:'+(lw||24)+'px;text-align:right;color:#94a3b8;font-family:monospace;flex-shrink:0">'+lbl+'</span>'+
+    '<div style="flex:1;height:8px;background:rgba(20,20,40,.8);border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:'+(col||'#f5c518')+';border-radius:4px"></div></div>'+
+    '<span style="width:28px;text-align:right;color:#4b5563;font-family:monospace;font-size:9px;flex-shrink:0">'+(Number.isInteger(val)?val:val.toFixed(1))+'</span></div>';
+}
+function toast(msg){var d=document.createElement('div');d.className='toast';d.textContent=msg;document.body.appendChild(d);setTimeout(function(){d.remove()},3000)}
+function showToast(m){toast(m)}
+
+// ===== RENDER =====
+function render(){
+  var draws=getDraws(S.game);var st=analyze(draws,S.game);var isEM=S.game==='em';
+  var h='';
+  // Header
+  h+='<header style="padding:24px 0 12px;text-align:center">';
+  h+='<h1 class="shm" style="font-size:30px;font-weight:900;letter-spacing:-1px">LotoVision Pro</h1>';
+  h+='<p style="color:#374151;font-size:10px;margin-top:3px">'+draws.length+' tirages | '+draws[0].d+'</p>';
+  h+='<div style="display:flex;justify-content:center;gap:8px;margin-top:12px">';
+  ['em','loto'].forEach(function(g){
+    var on=S.game===g;var l=g==='em'?'EuroMillions':'Loto';
+    h+='<button onclick="setGame(\''+g+'\')" style="padding:8px 18px;border-radius:10px;font-size:12px;font-weight:600;background:'+(on?'rgba(245,197,24,.1)':'rgba(20,20,50,.5)')+';border:1px solid '+(on?'rgba(245,197,24,.3)':'rgba(70,70,130,.12)')+';color:'+(on?'#f5c518':'#4b5563')+'">'+l+'</button>';
+  });
+  h+='</div></header>';
+  // Tabs
+  h+='<nav style="display:flex;justify-content:center;gap:4px;padding:0 0 14px;flex-wrap:wrap;overflow-x:auto">';
+  [{id:'optimal',l:'Strategie'},{id:'simple',l:'Classique'},{id:'stats',l:'Stats'},{id:'data',l:'Donnees'},{id:'history',l:'Historique'}].forEach(function(t){
+    h+='<button class="tab'+(S.tab===t.id?' on':'')+'" onclick="setTab(\''+t.id+'\')">'+t.l+'</button>';
+  });
+  h+='</nav>';
+
+  // === TAB: OPTIMAL ===
+  if(S.tab==='optimal'){
+    h+='<div class="card" style="margin-bottom:14px;border-color:rgba(245,197,24,.12)">';
+    h+='<div style="font-size:14px;font-weight:800;color:#f5c518;margin-bottom:8px">Strategie Optimale Combinee</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+    h+='<div class="phase"><span style="color:#a855f7;font-weight:700">P1</span> Score composite (freq+recence+retard+cycles) x anti-popularite</div>';
+    h+='<div class="phase"><span style="color:#f59e0b;font-weight:700">P2</span> Consensus 7 algos x 150 iterations avec votes ponderes</div>';
+    h+='<div class="phase"><span style="color:#22d3ee;font-weight:700">P3</span> Monte Carlo 3000 simulations de validation</div>';
+    h+='<div class="phase"><span style="color:#10b981;font-weight:700">P4-5</span> Pool 16 meilleurs + systeme reducteur diversifie</div>';
+    h+='</div></div>';
+    // Grid count
+    h+='<div style="display:flex;justify-content:center;gap:6px;align-items:center;margin-bottom:14px">';
+    h+='<span style="font-size:11px;color:#4b5563">Grilles :</span>';
+    [3,6,8,10].forEach(function(n){
+      var on=S.gridCount===n;
+      h+='<button onclick="S.gridCount='+n+';render()" style="padding:6px 12px;border-radius:6px;font-size:11px;font-weight:700;background:'+(on?'rgba(245,197,24,.12)':'rgba(20,20,50,.4)')+';border:1px solid '+(on?'rgba(245,197,24,.35)':'rgba(70,70,130,.1)')+';color:'+(on?'#f5c518':'#4b5563')+'">'+n+'</button>';
+    });
+    h+='</div>';
+    h+='<div style="text-align:center;margin-bottom:18px"><button class="gbtn" onclick="runOptimal()"'+(S.loading?' disabled':'')+'>'+
+      (S.loading?'Calcul en cours...':'Lancer ('+S.gridCount+' grilles)')+'</button></div>';
+    // Results
+    if(S.result){
+      var R=S.result;
+      h+='<div class="card" style="margin-bottom:14px;border-color:rgba(245,197,24,.1)">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div>';
+      h+='<div style="font-size:13px;font-weight:700;color:#f5c518">'+R.grids.length+' grilles optimisees</div>';
+      h+='<div style="font-size:10px;color:#4b5563">'+R.st.cov+' numeros | Somme: '+Math.round(R.st.aS)+' (cible: '+Math.round(st.avgS)+')</div>';
+      h+='</div><div style="text-align:right"><div style="font-size:9px;color:#374151">Cout</div>';
+      h+='<div style="font-size:14px;font-weight:700;color:#f59e0b;font-family:monospace">'+(R.grids.length*(isEM?2.5:2.2)).toFixed(2)+' EUR</div></div></div>';
+      R.grids.forEach(function(grid,i){
+        var sum=grid.mn.reduce(function(a,b){return a+b},0);
+        var ev=grid.mn.filter(function(n){return n%2===0}).length;
+        h+='<div class="row" style="display:flex;align-items:center;gap:5px;padding:7px 0;border-bottom:'+(i<R.grids.length-1?'1px solid rgba(70,70,130,.06)':'none')+';animation-delay:'+(i*.06)+'s">';
+        h+='<span style="font-size:9px;color:'+(i===0?'#f5c518':'#374151')+';font-family:monospace;min-width:24px;font-weight:'+(i===0?800:400)+'">#'+(i+1)+'</span>';
+        if(i===0)h+='<span style="font-size:7px;background:linear-gradient(135deg,#f5c518,#fcd34d);color:#1a1a2e;padding:1px 5px;border-radius:3px;font-weight:800">TOP</span>';
+        h+='<div style="display:flex;gap:3px;flex-wrap:wrap">';
+        grid.mn.forEach(function(n){h+=B(n,'n','s')});
+        h+='</div><span style="color:#1e293b;font-size:9px">+</span><div style="display:flex;gap:3px">';
+        grid.sn.forEach(function(n){h+=B(n,isEM?'st':'bo','s')});
+        h+='</div><span style="font-size:8px;color:#374151;font-family:monospace;margin-left:auto">S'+sum+' '+ev+'P/'+(5-ev)+'I</span></div>';
+      });
+      h+='</div>';
+      // Pool
+      h+='<div class="card" style="margin-bottom:14px">';
+      h+='<div style="font-size:11px;color:#a855f7;font-weight:700;margin-bottom:8px">Pool des 16 meilleurs</div>';
+      h+='<div style="display:flex;gap:4px;flex-wrap:wrap">';
+      R.pool.slice().sort(function(a,b){return a-b}).forEach(function(n){
+        var p=st.pop[n]||0;var col=p<=2?'#22d3ee':p<=5?'#f59e0b':'#ef4444';
+        h+='<div style="text-align:center">'+B(n,'n','s')+'<div style="font-size:7px;color:'+col+';font-family:monospace;margin-top:1px">'+p+'</div></div>';
+      });
+      h+='</div><div style="font-size:9px;color:#374151;margin-top:6px">0-2 = peu joue (max gain) | 3-5 = moyen | 6+ = populaire</div></div>';
+    }
+  }
+
+  // === TAB: SIMPLE ===
+  if(S.tab==='simple'){
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
+    [{id:'hot',n:'Chauds',c:'#ef4444'},{id:'cold',n:'Froids',c:'#06b6d4'},{id:'overdue',n:'En Retard',c:'#f59e0b'},{id:'random',n:'Aleatoire',c:'#6366f1'}].forEach(function(a){
+      var on=S.sAlgo===a.id;
+      h+='<button onclick="S.sAlgo=\''+a.id+'\';render()" class="card" style="text-align:left;border-color:'+(on?a.c+'50':'rgba(70,70,130,.08)')+'">';
+      h+='<div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:'+a.c+'"></div>';
+      h+='<span style="font-size:11px;font-weight:600">'+a.n+'</span></div></button>';
+    });
+    h+='</div>';
+    h+='<div style="text-align:center;margin-bottom:16px"><button onclick="runSimple()" style="padding:12px 32px;border-radius:12px;font-size:14px;font-weight:700;background:linear-gradient(135deg,#64748b,#94a3b8);color:#0f172a">Generer</button></div>';
+    if(S.sResult){
+      h+='<div class="card" style="text-align:center"><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap">';
+      S.sResult.mn.forEach(function(n,i){h+='<span class="b b-l b-n bg" style="animation-delay:'+(i*.07)+'s">'+n+'</span>'});
+      h+='</div><div style="display:flex;justify-content:center;gap:8px;margin-top:8px">';
+      S.sResult.sn.forEach(function(n,i){h+='<span class="b b-l b-'+(isEM?'st':'bo')+' bg" style="animation-delay:'+((5+i)*.07)+'s">'+n+'</span>'});
+      h+='</div><div style="margin-top:10px;font-size:10px;color:#374151;font-family:monospace">S'+S.sResult.mn.reduce(function(a,b){return a+b},0)+'</div></div>';
+    }
+  }
+
+  // === TAB: STATS ===
+  if(S.tab==='stats'){
+    var fS=Object.entries(st.F).sort(function(a,b){return b[1]-a[1]});var mF=fS[0]?fS[0][1]:1;
+    h+='<div class="card" style="margin-bottom:12px"><div style="font-size:11px;color:rgba(245,197,24,.8);font-weight:600;text-transform:uppercase;margin-bottom:8px">Frequences (1-'+st.mM+')</div>';
+    h+='<div class="sc" style="max-height:300px;overflow-y:auto">';
+    fS.forEach(function(e){var c=e[1]>mF*.75?'#ef4444':e[1]>mF*.45?'#f59e0b':'#06b6d4';h+=bar(e[0],e[1],mF,c)});
+    h+='</div></div>';
+    // Secondary
+    h+='<div class="card" style="margin-bottom:12px"><div style="font-size:11px;color:rgba(245,197,24,.8);font-weight:600;text-transform:uppercase;margin-bottom:8px">'+(isEM?'Etoiles (1-12)':'N Chance (1-10)')+'</div>';
+    Object.entries(st.sF).sort(function(a,b){return b[1]-a[1]}).forEach(function(e){h+=bar(e[0],e[1],mx(st.sF),'#8b5cf6')});
+    h+='</div>';
+    // Top pairs
+    h+='<div class="card" style="margin-bottom:12px"><div style="font-size:11px;color:#ec4899;font-weight:600;margin-bottom:8px">Top 8 Paires</div>';
+    var topP=Object.entries(st.pairs).sort(function(a,b){return b[1]-a[1]}).slice(0,8);var mTP=topP.length?topP[0][1]:1;
+    topP.forEach(function(e){var p=e[0].split('-').map(Number);
+      h+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">'+B(p[0],'n','s')+B(p[1],'n','s');
+      h+='<div style="flex:1;height:5px;background:rgba(20,20,40,.8);border-radius:3px;overflow:hidden"><div style="width:'+(e[1]/mTP*100)+'%;height:100%;background:#ec4899;border-radius:3px"></div></div>';
+      h+='<span style="font-size:8px;color:#4b5563;font-family:monospace">'+e[1]+'x</span></div>'});
+    h+='</div>';
+    // Recent draws
+    h+='<div class="card"><div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:8px">Derniers tirages</div>';
+    h+='<div class="sc" style="max-height:250px;overflow-y:auto">';
+    draws.slice(0,20).forEach(function(dr,i){
+      h+='<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid rgba(70,70,130,.04)">';
+      h+='<span style="font-size:9px;color:#374151;font-family:monospace;min-width:65px">'+dr.d+'</span>';
+      h+='<div style="display:flex;gap:2px">';dr.n.forEach(function(n){h+=B(n,'n','s')});
+      h+='</div><span style="color:#1e293b;font-size:9px">+</span>';
+      if(isEM)dr.s.forEach(function(n){h+=B(n,'st','s')});else h+=B(dr.c,'bo','s');
+      h+='</div>'});
+    h+='</div></div>';
+  }
+
+  // === TAB: DATA ===
+  if(S.tab==='data'){
+    var lf=localStorage.getItem('lf_'+S.game);
+    h+='<div class="card" style="margin-bottom:14px">';
+    h+='<div style="font-size:13px;font-weight:700;color:#f5c518;margin-bottom:8px">Mise a jour automatique</div>';
+    h+='<div style="font-size:10px;color:#4b5563;margin-bottom:8px">Derniere MAJ: '+(lf?new Date(lf).toLocaleString('fr-FR'):'jamais')+'</div>';
+    h+='<div style="font-size:10px;color:#4b5563;margin-bottom:10px">Tirages en memoire: <strong style="color:#e2e8f0">'+draws.length+'</strong></div>';
+    if(S.fStatus)h+='<div style="font-size:11px;color:#22d3ee;margin-bottom:10px;padding:8px;background:rgba(15,15,35,.6);border-radius:8px">'+S.fStatus+'</div>';
+    h+='<button onclick="doFetch(S.game)" style="padding:10px 24px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(34,211,238,.15);border:1px solid rgba(34,211,238,.25);color:#22d3ee;width:100%">Rechercher nouveaux tirages</button>';
+    h+='</div>';
+    // Manual add
+    h+='<div class="card" style="margin-bottom:14px">';
+    h+='<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:10px">Ajout manuel</div>';
+    h+='<div style="margin-bottom:8px"><label style="font-size:10px;color:#4b5563;display:block;margin-bottom:3px">Date</label>';
+    h+='<input type="date" id="mDate" class="inp" value="'+new Date().toISOString().split('T')[0]+'"></div>';
+    h+='<div style="margin-bottom:8px"><label style="font-size:10px;color:#4b5563;display:block;margin-bottom:3px">5 numeros principaux (separes par espaces)</label>';
+    h+='<input type="text" id="mNums" class="inp" placeholder="ex: 7 15 23 38 45" inputmode="numeric"></div>';
+    h+='<div style="margin-bottom:10px"><label style="font-size:10px;color:#4b5563;display:block;margin-bottom:3px">'+(isEM?'2 etoiles':'N Chance')+'</label>';
+    h+='<input type="text" id="mSec" class="inp" placeholder="'+(isEM?'ex: 3 9':'ex: 7')+'" inputmode="numeric"></div>';
+    h+='<button onclick="doManualAdd()" style="padding:10px 24px;border-radius:10px;font-size:12px;font-weight:700;background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.25);color:#f97316;width:100%">Ajouter le tirage</button>';
+    h+='</div>';
+    // Reset
+    h+='<div class="card">';
+    h+='<div style="font-size:11px;color:#ef4444;font-weight:600;margin-bottom:8px">Zone danger</div>';
+    h+='<button onclick="if(confirm(\'Reinitialiser toutes les donnees ?\')){localStorage.clear();S.result=null;S.hist=[];render();toast(\'Reset OK\')}" style="padding:8px 16px;border-radius:8px;font-size:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.15);color:#ef4444">Reinitialiser les donnees</button>';
+    h+='</div>';
+  }
+
+  // === TAB: HISTORY ===
+  if(S.tab==='history'){
+    if(!S.hist.length){
+      h+='<div class="card" style="text-align:center;padding:40px"><p style="color:#374151">Aucune grille generee</p></div>';
+    }else{
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+      h+='<span style="font-size:11px;color:#374151">'+S.hist.length+' grille(s)</span>';
+      h+='<button onclick="S.hist=[];saveHist([]);render()" style="font-size:9px;color:rgba(239,68,68,.4);background:transparent;padding:3px 8px;border-radius:4px;border:1px solid rgba(239,68,68,.12)">Effacer</button></div>';
+      S.hist.forEach(function(e,i){
+        h+='<div class="card" style="padding:8px;margin-bottom:3px;display:flex;align-items:center;gap:5px;flex-wrap:wrap">';
+        h+='<span style="font-size:9px;color:'+(e.algo==='optimal'?'#f5c518':'#374151')+';font-family:monospace;min-width:46px;font-weight:'+(e.algo==='optimal'?700:400)+'">'+(e.algo==='optimal'?'OPT':e.algo)+'</span>';
+        h+='<div style="display:flex;gap:2px;align-items:center">';
+        e.mn.forEach(function(n){h+=B(n,'n','s')});h+='<span style="color:#1e293b;margin:0 1px;font-size:9px">+</span>';
+        e.sn.forEach(function(n){h+=B(n,e.game==='em'?'st':'bo','s')});
+        h+='</div><span style="font-size:8px;color:#1e293b;font-family:monospace;margin-left:auto">S'+e.mn.reduce(function(a,b){return a+b},0)+'</span></div>';
+      });
+    }
+  }
+
+  // Footer
+  h+='<footer style="text-align:center;padding:16px 0 8px"><p style="font-size:8px;color:#1e293b;line-height:1.5">Outil educatif — tirages aleatoires et independants. Jouez responsablement.</p></footer>';
+
+  document.getElementById('app').innerHTML=h;
+}
+
+// ===== EVENTS =====
+function setGame(g){S.game=g;S.result=null;S.sResult=null;S.fStatus='';render()}
+function setTab(t){S.tab=t;render()}
+
+function runOptimal(){
+  S.loading=true;render();
+  setTimeout(function(){
+    var draws=getDraws(S.game);var st=analyze(draws,S.game);
+    // Run 3 times, keep best
+    var best=null,bAvg=0;
+    for(var r=0;r<3;r++){
+      var res=optimal(S.game,st,S.gridCount);
+      var avg=res.grids.reduce(function(a,g){return a+g.score},0)/(res.grids.length||1);
+      if(avg>bAvg){bAvg=avg;best=res}}
+    S.result=best;S.loading=false;
+    // Save to history
+    if(best){best.grids.forEach(function(g){S.hist.unshift({mn:g.mn,sn:g.sn,score:g.score,algo:'optimal',game:S.game})});
+      S.hist=S.hist.slice(0,200);saveHist(S.hist)}
+    render();
+  },100);
+}
+
+function runSimple(){
+  var draws=getDraws(S.game);var st=analyze(draws,S.game);
+  S.sResult=genBasic(S.sAlgo,S.game,st);
+  S.hist.unshift({mn:S.sResult.mn,sn:S.sResult.sn,algo:S.sAlgo,game:S.game});
+  S.hist=S.hist.slice(0,200);saveHist(S.hist);render()
+}
+
+function doManualAdd(){
+  var date=document.getElementById('mDate').value;
+  var numsStr=document.getElementById('mNums').value.trim();
+  var secStr=document.getElementById('mSec').value.trim();
+  if(!date||!numsStr||!secStr){toast('Remplir tous les champs');return}
+  var nums=numsStr.split(/[\s,;-]+/).map(Number).filter(function(n){return n>=1&&n<=(S.game==='em'?50:49)});
+  var sec=secStr.split(/[\s,;-]+/).map(Number).filter(function(n){return n>=1&&n<=(S.game==='em'?12:10)});
+  var isEM=S.game==='em';
+  if(nums.length!==5){toast('Il faut exactement 5 numeros');return}
+  if(isEM&&sec.length!==2){toast('Il faut 2 etoiles');return}
+  if(!isEM&&sec.length!==1){toast('Il faut 1 N Chance');return}
+  if(new Set(nums).size!==5){toast('Numeros en double');return}
+  var ok=addManual(S.game,date,nums,sec);
+  if(ok){toast('Tirage ajoute !');render()}
+  else toast('Ce tirage existe deja');
+}
+
+// ===== INIT =====
+function init(){
+  S.hist=getHist();
+  // Register service worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){console.log('SW:',e)})
+  }
+  render();
+  // Auto-fetch on load
+  setTimeout(function(){
+    var lf=localStorage.getItem('lf_'+S.game);
+    var now=Date.now();
+    var last=lf?new Date(lf).getTime():0;
+    // Fetch if last fetch was more than 6 hours ago
+    if(now-last>6*60*60*1000){doFetch(S.game)}
+  },2000);
+}
+init();
+</script>
+</body>
+</html>

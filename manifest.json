@@ -1,0 +1,19 @@
+{
+  "name": "LotoVision Pro — Stratégie Optimale",
+  "short_name": "LotoVision",
+  "description": "Analyseur de loterie avec stratégie optimale combinée",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#06061a",
+  "theme_color": "#06061a",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
